@@ -18,7 +18,9 @@ public class Application implements CommandLineRunner {
 	
 	@Override
 	public void run(String... args) throws Exception {
-		webCrawlerService.getPageLinks(args[0]);
+		//webCrawlerService.getPageLinks(args[0]);
+		webCrawlerService.getPageLinks("http://www.soscarro.com.br")
+			.forEach(System.out::println);
 	}
 	
 }
