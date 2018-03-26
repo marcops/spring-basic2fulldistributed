@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'org.springframework.boot' version '1.5.10.RELEASE'
+}
+
+repositories {
+    maven {
+        url 'https://repo.gradle.org/gradle/plugins-releases'
+    }
+}
+
+project.ext {
+    junitVersion = '4.12'
+    jsoupVersion = '1.11.2'
+    gsonVersion = '2.8.2'
+    mockitoVersion = '2.8.47'
+}
+
+dependencies {
+	//Springboot
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter'
+	//HTml parser
+	compile group: 'org.jsoup', name: 'jsoup', version: jsoupVersion
+	//Json parser
+	compile group: 'com.google.code.gson', name: 'gson', version: gsonVersion
+	testCompile group: 'junit', name: 'junit', version: junitVersion
+	testCompile group: 'org.mockito', name: 'mockito-core', version: mockitoVersion
+}

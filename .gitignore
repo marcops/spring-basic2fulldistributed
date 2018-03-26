@@ -1,0 +1,11 @@
+async-webcrawler/.gradle/
+async-webcrawler/.settings
+async-webcrawler/.project
+async-webcrawler/bin/
+async-webcrawler/.classpath
+
+simple-webcrawler/.gradle
+simple-webcrawler/.project
+simple-webcrawler/.settings
+simple-webcrawler/bin/
+simple-webcrawler/.classpath
