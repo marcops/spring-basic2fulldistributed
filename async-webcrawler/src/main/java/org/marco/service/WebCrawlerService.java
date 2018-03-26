@@ -1,45 +1,94 @@
 package org.marco.service;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.marco.builder.LinkBuilder;
 import org.marco.model.Link;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import com.google.gson.Gson;
 
 @Service
 public class WebCrawlerService {
-	private String exportTo;
-	private NavigateService navigateService;
+	private Set<String> links = new HashSet<>();
 
-	@Autowired
-	public WebCrawlerService(NavigateService navigateService, @Value("${webcrawler.export.to:sitemap.json}") String exportTo) {
-		this.exportTo = exportTo;
-		this.navigateService = navigateService;
+	public List<Link> getPageLinks(String domain) throws Exception  {
+		return getPageLinks(domain, new URL(domain)).get();
 	}
 	
-	/**
-     * Discover all pages related with domain and export it 
-     * in a sitemap that uses json format
-     *
-     * @param   domain
-     *          the url domain to discover all pages related
-     *
-     * @return  none
-     *
-     * @throws  Exception
-     *          if an error occurs an exception will be handle
-     */
-	public void execute(String domain) throws Exception {
-		exportSitemap(navigateService.execute(domain));
+	private CompletableFuture<List<Link>> getPageLinks(String url, URL domain) {
+		return CompletableFuture.supplyAsync(()-> getPageByPage(url, domain));
 	}
 
-	private void exportSitemap(List<Link> links) throws IOException {
-		Files.write(Paths.get(exportTo), new Gson().toJson(links).getBytes());
+	private List<Link> getPageByPage(String url, URL domain) {
+		try {
+			return getAsyncPageByPage(url, domain);
+		} catch (Exception e) {
+			System.err.println("For '" + url + "': " + e.getMessage());
+			return new ArrayList<>();
+		}
+	}
+
+	private List<Link> getAsyncPageByPage(String url, URL domain) throws MalformedURLException, IOException, Exception {
+		if (links.contains(url) || !isInternalUrl(url, domain)) return new ArrayList<>();
+		links.add(url);
+		System.out.println("[" + url + "]");
+		
+		Document document = Jsoup.parse(url);
+		
+		Link link = LinkBuilder.builder()
+				.url(document.location())
+				.title(document.title())
+				.childrens(isInternalUrl(url, domain) ? getChildrens(document) : new HashSet<String>())
+				.build();
+		
+		return Stream
+				.concat(Stream.of(link), processLinksChildren(domain, link).stream())
+				.collect(Collectors.toList());
+	}
+
+	private List<Link> processLinksChildren(URL domain, Link link) throws Exception {
+		List<CompletableFuture<List<Link>>> futuristicPage = link.getChildrens()
+				.stream()
+				.map(x->getPageLinks(x, domain))
+				.collect(Collectors.toList());
+		//wait all async process closed
+		CompletableFuture.allOf(futuristicPage.toArray(new CompletableFuture[futuristicPage.size()])).get();
+		
+		return futuristicPage.stream()
+				  .map(CompletableFuture::join)
+				  .flatMap(listContainer -> listContainer.stream())
+				  .collect(Collectors.toList());
+	}
+
+	private static boolean isInternalUrl(String page, URL domain) throws MalformedURLException {
+		return new URL(page).getHost().equals(domain.getHost());
+	}
+
+	private static Set<String> getChildrens(Document document) {
+		return document.select("a[href]")
+				.stream()
+				.map(x -> getUrlClean(x.absUrl("href")))
+				.filter(x -> x != null)
+				.collect(Collectors.toSet());
+	}
+
+	private static String getUrlClean(String page) {
+		try {
+			URL url = new URL(page);
+			return url.getProtocol() + "://" + url.getHost() + url.getPath();
+		} catch (MalformedURLException e) {
+			System.err.println(e);
+			return null;
+		}
 	}
 }

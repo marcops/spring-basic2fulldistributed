@@ -14,7 +14,7 @@ import org.mockito.MockitoAnnotations;
 public class NavigateServiceTest {
 	
 	@InjectMocks
-	private NavigateService navigateService;
+	private WebCrawlerService navigateService;
 	
 	@Before
 	public void setUp() {
@@ -23,24 +23,24 @@ public class NavigateServiceTest {
 	
 	@Test
 	public void can_process_a_simple_domain() throws Exception {
-		List<Link> lst = navigateService.execute("http://www.example.com");
+		List<Link> lst = navigateService.getPageLinks("http://www.example.com");
 		assertEquals(1, lst.size());
 		assertEquals(1, lst.get(0).getChildrens().size());
 	}
 	
 	@Test(expected = MalformedURLException.class)
 	public void wrong_domain() throws Exception   {
-		navigateService.execute("http ://www.ex amp le.com");
+		navigateService.getPageLinks("http ://www.ex amp le.com");
 	}
 	
 	@Test
 	public void domain_not_found() throws Exception  {
-		List<Link> lst = navigateService.execute("http://www.examp .com");
+		List<Link> lst = navigateService.getPageLinks("http://www.examp .com");
 		assertEquals(0, lst.size());
 	}
 	
 	@Test(expected = MalformedURLException.class)
 	public void null_domain() throws Exception   {
-		navigateService.execute(null);
+		navigateService.getPageLinks(null);
 	}
 }

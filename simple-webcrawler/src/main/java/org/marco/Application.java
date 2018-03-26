@@ -26,7 +26,7 @@ public class Application implements CommandLineRunner {
 	
 	@Override
 	public void run(String... args) throws Exception {
-		webCrawlerService.navigatePageByPage("http://www.example.com/");
+		webCrawlerService.navigatePageByPage("http://www.example.com");
 	}
 	
 }

@@ -1,6 +1,8 @@
 package org.marco.service;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashSet;
 
 import org.jsoup.Jsoup;
@@ -9,24 +11,25 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class WebCrawlerService {
-	private static final int MAX_DEPTH = 2;
 	private HashSet<String> links = new HashSet<>();
 	
-	public void navigatePageByPage(String URL) {
-		navigatePageByPage(URL, 0);
+	public void navigatePageByPage(String URL) throws MalformedURLException {
+		navigatePageByPage(URL, new URL(URL).getHost());
 	}
 	
-	private void navigatePageByPage(String URL, Integer depth) {
+	private void navigatePageByPage(String URL, String domain) {
 		try {
-			navigateInDepth(URL, depth);
+			navigateInDepth(URL, domain);
 		} catch (IOException e) {
 			System.err.println("For '" + URL + "': " + e.getMessage());
 		}
 	}
 
-	private void navigateInDepth(String URL, Integer depth) throws IOException {
-		if (!isUrlNotProcessedAndInDepth(URL, depth)) return;
-		System.out.println(">> Depth: " + depth + " [" + URL + "]");
+	private void navigateInDepth(String URL, String domain) throws IOException {
+		if (links.contains(URL)) return;
+		System.out.println("[" + URL + "]");
+
+		if(!URL.contains(domain)) return;
 		links.add(URL);
 		
 		Elements linksOnPage = Jsoup.connect(URL)
@@ -34,10 +37,7 @@ public class WebCrawlerService {
 				.select("a[href]");
 
 		linksOnPage.stream()
-			.forEach(page -> navigatePageByPage(page.attr("abs:href"), depth+1));
+			.forEach(page -> navigatePageByPage(page.attr("abs:href"), domain));
 	}
 
-	private boolean isUrlNotProcessedAndInDepth(String URL, Integer depth) {
-		return !links.contains(URL) && (depth < MAX_DEPTH);
-	}
 }

@@ -31,11 +31,6 @@ public class LinkBuilder {
 		return this;
 	}
 
-	public LinkBuilder lastModified(String lastModified) {
-		this.link.setLastModified(lastModified);
-		return this;
-	}
-
 	public LinkBuilder childrens(Set<String> childrens) {
 		this.link.setChildrens(childrens);
 		return this;
